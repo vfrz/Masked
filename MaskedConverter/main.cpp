@@ -9,13 +9,13 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
 
-    if (argc != 2) {
+    if (argc != 3) {
         cout << "Wrong number of arguments, first is the input directory path and second is the output directory path." << endl;
         return 1;
     }
 
-    auto inputPath = argv[0];
-    auto outputPath = argv[1];
+    auto inputPath = argv[1];
+    auto outputPath = argv[2];
 
     auto i = 0;
 
