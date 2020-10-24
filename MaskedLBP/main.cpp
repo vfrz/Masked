@@ -89,7 +89,7 @@ void process(std::string inputDirectory, std::string outputFile)
         {
             stream << colorigram[i];
             if (i < 255)
-                stream << ",";
+                stream << " ";
         }
 
         stream << std::endl;
@@ -104,7 +104,7 @@ void process(std::string inputDirectory, std::string outputFile)
     stream.close();
 }
 
-void compare(std::string inputFile, std::string inputDirectory)
+void compare(std::string inputFile, std::string inputDirectory, std::string algo, std::string outputFile)
 {
 
 }
