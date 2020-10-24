@@ -6,6 +6,6 @@ set(CMAKE_CXX_STANDARD 20)
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-add_executable(MaskedLBP main.cpp)
+add_executable(MaskedLBP main.cpp main.h)
 
 target_link_libraries(MaskedLBP ${OpenCV_LIBS})

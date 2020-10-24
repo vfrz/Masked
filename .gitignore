@@ -2,6 +2,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/clion+all,jetbrains+all,c++,cmake
 # Edit at https://www.toptal.com/developers/gitignore?templates=clion+all,jetbrains+all,c++,cmake
 
+dataset/
+
 ### C++ ###
 # Prerequisites
 *.d

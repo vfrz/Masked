@@ -1,31 +1,32 @@
-#include <iostream>
-#include <opencv2/opencv.hpp>
-#include <filesystem>
+#include "main.h"
 
 namespace fs = std::filesystem;
 
 using namespace cv;
 using namespace std;
 
-void displayColorigram(ushort colorigram[]) {
-
-    auto total = 0;
-
-    for (auto i = 0; i < 256; i++) {
-        cout << "Value at " << i << " is " << to_string(colorigram[i]) << endl;
-
-        total += colorigram[i];
+int main(int argc, char *argv[])
+{
+    if (argc < 2) {
+        std::cout << "MaskedLBP requires a command paramater" << std::endl;
+        return 1;
     }
 
-    cout << "Total: " << total << endl;
+    if (argv[1] == std::string("process"))
+    {
+        process(argv[2], argv[3]);
+    } else if (argv[1] == std::string("compare"))
+    {
+        compare(argv[2], argv[3]);
+    } else {
+        std::cout << "Unknown command: " << argv[1] << std::endl;
+    }
+
+    return 0;
 }
 
-int main(int argc, char *argv[]) {
-
-    auto inputPath = argv[1];
-
-    cout << inputPath << endl;
-
+void process(std::string inputDirectory, std::string outputFile)
+{
     auto positions = new tuple<Point, uchar>[8]{
             tuple<Point, int>(Point(-1, -1), 1),
             tuple<Point, int>(Point(0, -1), 2),
@@ -37,7 +38,12 @@ int main(int argc, char *argv[]) {
             tuple<Point, int>(Point(1, 1), 128)
     };
 
-    for (const auto &entry : fs::directory_iterator(inputPath)) {
+    ofstream stream;
+    stream.open(outputFile);
+    stream.clear();
+
+    for (const auto &entry : fs::directory_iterator(inputDirectory))
+    {
 
         cout << "Processing image: " << entry.path().filename() << endl;
 
@@ -48,18 +54,22 @@ int main(int argc, char *argv[]) {
 
         auto colorigram = new ushort[256];
 
-        for (auto i = 0; i < 256; i++) {
+        for (auto i = 0; i < 256; i++)
+        {
             colorigram[i] = 0;
         }
 
-        for (auto x = 1; x < inputImage.cols - 1; x++) {
-            for (auto y = 1; y < inputImage.rows - 1; y++) {
+        for (auto x = 1; x < inputImage.cols - 1; x++)
+        {
+            for (auto y = 1; y < inputImage.rows - 1; y++)
+            {
 
                 auto middlePixel = inputImage.at<uchar>(Point(x, y));
 
                 uchar finalValue = 0;
 
-                for (auto i = 0; i < 8; i++) {
+                for (auto i = 0; i < 8; i++)
+                {
                     auto pos = positions[i];
 
                     auto p = get<0>(pos);
@@ -75,11 +85,41 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        displayColorigram(colorigram);
+        for (auto i = 0; i < 256; i++)
+        {
+            stream << colorigram[i];
+            if (i < 255)
+                stream << ",";
+        }
+
+        stream << std::endl;
+
+        //displayColorigram(colorigram);
 
         //imshow("debug", outputImage);
 
+        //waitKey();
     }
 
-    return 0;
+    stream.close();
+}
+
+void compare(std::string inputFile, std::string inputDirectory)
+{
+
+}
+
+void displayColorigram(ushort colorigram[])
+{
+
+    auto total = 0;
+
+    for (auto i = 0; i < 256; i++)
+    {
+        cout << "Value at " << i << " is " << to_string(colorigram[i]) << endl;
+
+        total += colorigram[i];
+    }
+
+    cout << "Total: " << total << endl;
 }
