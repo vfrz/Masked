@@ -7,25 +7,27 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2) {
+    if (argc < 2)
+    {
         std::cout << "MaskedLBP requires a command paramater" << std::endl;
         return 1;
     }
 
     if (argv[1] == std::string("process"))
     {
-        process(argv[2], argv[3]);
+        process(argc, argv);
     } else if (argv[1] == std::string("compare"))
     {
-        compare(argv[2], argv[3]);
-    } else {
+        compare(argv[2], argv[3], argv[4], argv[5]);
+    } else
+    {
         std::cout << "Unknown command: " << argv[1] << std::endl;
     }
 
     return 0;
 }
 
-void process(std::string inputDirectory, std::string outputFile)
+void processDirectory(std::string inputDirectory, Masked masked, std::string outputFile)
 {
     auto positions = new tuple<Point, uchar>[8]{
             tuple<Point, int>(Point(-1, -1), 1),
@@ -39,12 +41,10 @@ void process(std::string inputDirectory, std::string outputFile)
     };
 
     ofstream stream;
-    stream.open(outputFile);
-    stream.clear();
+    stream.open(outputFile, std::ios_base::app);
 
     for (const auto &entry : fs::directory_iterator(inputDirectory))
     {
-
         cout << "Processing image: " << entry.path().filename() << endl;
 
         auto inputImagePath = samples::findFile(entry.path());
@@ -85,6 +85,8 @@ void process(std::string inputDirectory, std::string outputFile)
             }
         }
 
+        stream << masked << " ";
+
         for (auto i = 0; i < 256; i++)
         {
             stream << colorigram[i];
@@ -102,6 +104,19 @@ void process(std::string inputDirectory, std::string outputFile)
     }
 
     stream.close();
+}
+
+void process(int argc, char *argv[])
+{
+    // Well masked
+    std::string cmfdInputDirectory = argv[2];
+    // Bad masked
+    std::string imfdInputDirectory = argv[3];
+
+    std::string outputFile = argv[4];
+
+    processDirectory(cmfdInputDirectory, Masked::Good, outputFile);
+    processDirectory(imfdInputDirectory, Masked::Bad, outputFile);
 }
 
 void compare(std::string inputFile, std::string inputDirectory, std::string algo, std::string outputFile)

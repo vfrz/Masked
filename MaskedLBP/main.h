@@ -5,7 +5,12 @@
 #include <opencv2/opencv.hpp>
 #include <filesystem>
 
-void process(std::string inputDirectory, std::string outputFile);
+enum Masked {
+    Bad = 0,
+    Good = 1
+};
+
+void process(int argc, char *argv[]);
 
 void compare(std::string inputFile, std::string inputDirectory, std::string algo, std::string outputFile);
 

@@ -6,11 +6,13 @@
 
 `MaskedLBP [command] {args}`
 
+/!\ You need to put the dataset folder at the root before using it.
+
 #### Process command
 
-`MaskedLBP process {inputDirectory} {outputFile}`
+`MaskedLBP process {cmfdInputDirectory} {imfdInputDirectory} {outputFile}`
 
-`MaskedLBP process "../dataset/GRAY/1TRAIN/CMFD" "1TRAIN_CMFD.txt"`
+`MaskedLBP process "../dataset/GRAY/1TRAIN/CMFD" "../dataset/GRAY/1TRAIN/IMFD" "1TRAIN.txt"`
 
 #### Compare command
 
