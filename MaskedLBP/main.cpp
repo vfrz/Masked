@@ -73,6 +73,8 @@ void compareDirectory(std::string modelFile, std::string inputDirectory, std::st
 {
     auto models = parseModelFile(modelFile);
 
+    std::cout << models[0].getData(0) << std::endl;
+
     ofstream stream;
     stream.open(outputFile, std::ios_base::app);
 
@@ -82,7 +84,29 @@ void compareDirectory(std::string modelFile, std::string inputDirectory, std::st
 
         auto imageModel = readLBP(entry.path(), Masked::Unknown);
 
-        
+        float minDiff = 8000000;
+        Masked currentMasked = Masked::Unknown;
+        std::cout << models[0].getData(0) << std::endl;
+
+        for (auto i = 0; i < models.size(); i++)
+        {
+            std::cout << models[0].getData(0) << std::endl;
+            return;
+
+            float diff = getDifference(imageModel, models[i], algorithm);
+            //std::cout << "MinDiff: " << to_string(minDiff) << " Diff: " << to_string(diff) << std::endl;
+            if (diff < minDiff)
+            {
+                std::cout << diff << " " << i << std::endl;
+                currentMasked = models[i].getMasked();
+                minDiff = diff;
+            }
+            i++;
+        }
+
+        return;
+
+        stream << (int) currentMasked << " " << (int) expectedMasked << " " << entry.path().filename() << endl;
     }
 
     stream.close();
@@ -161,15 +185,22 @@ std::vector<MaskedModel> parseModelFile(std::string modelFile)
         int masked;
         stream >> masked;
 
-        ushort data[256];
+        ushort data[256] = {};
         for (auto i = 0; i < 256; i++)
         {
-            stream >> data[i];
+            ushort temp;
+            stream >> temp;
+            data[i] = temp;
         }
 
         MaskedModel model((Masked) masked, data);
 
-        result.push_back(model);
+        /*std::cout << data[0] << std::endl;
+        std::cout << data[1] << std::endl;*/
+
+        result.emplace_back(model);
+
+        break;
     }
 
     return result;
@@ -179,9 +210,12 @@ float getSAD(MaskedModel imageModel, MaskedModel compared)
 {
     float total = 0;
 
+    auto imageData = imageModel.getData();
+    auto comparedData = compared.getData();
+
     for (auto i = 0; i < 256; i++)
     {
-        total += abs(imageModel.getData(i) - compared.getData(i));
+        total += (float) abs(imageData[i] - comparedData[i]);
     }
 
     return total;
