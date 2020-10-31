@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
         process(argc, argv);
     } else if (argv[1] == std::string("compare"))
     {
-        compare(argv[2], argv[3], argv[4], argv[5]);
+        compare(argc, argv);
     } else
     {
         std::cout << "Unknown command: " << argv[1] << std::endl;
@@ -63,7 +63,6 @@ void processDirectory(std::string inputDirectory, Masked masked, std::string out
         {
             for (auto y = 1; y < inputImage.rows - 1; y++)
             {
-
                 auto middlePixel = inputImage.at<uchar>(Point(x, y));
 
                 uchar finalValue = 0;
@@ -97,9 +96,7 @@ void processDirectory(std::string inputDirectory, Masked masked, std::string out
         stream << std::endl;
 
         //displayColorigram(colorigram);
-
         //imshow("debug", outputImage);
-
         //waitKey();
     }
 
@@ -119,14 +116,50 @@ void process(int argc, char *argv[])
     processDirectory(imfdInputDirectory, Masked::Bad, outputFile);
 }
 
-void compare(std::string inputFile, std::string inputDirectory, std::string algo, std::string outputFile)
+void compareDirectory(std::string modelFile, std::string inputDirectory, std::string algorithm, std::string outputFile, Masked expectedMasked)
 {
+}
 
+void compare(int argc, char *argv[])
+{
+    std::string modelFile = argv[2];
+    std::string cmfdInputDirectory = argv[3];
+    std::string imfdInputDirectory = argv[4];
+    std::string algorithm = argv[5];
+    std::string outputFile = argv[6];
+
+    compareDirectory(modelFile, cmfdInputDirectory, algorithm, outputFile, Masked::Good);
+    compareDirectory(modelFile, imfdInputDirectory, algorithm, outputFile, Masked::Bad);
+}
+
+std::vector<MaskedModel> parseModelFile(std::string modelFile)
+{
+    ifstream stream;
+    stream.open(modelFile);
+
+    auto result = std::vector<MaskedModel>();
+
+    while (!stream.eof())
+    {
+        int masked;
+        stream >> masked;
+
+        ushort data[256];
+        for (auto i = 0; i < 256; i++)
+        {
+            stream >> data[i];
+        }
+
+        MaskedModel model((Masked) masked, data);
+
+        result.push_back(model);
+    }
+
+    return result;
 }
 
 void displayColorigram(ushort colorigram[])
 {
-
     auto total = 0;
 
     for (auto i = 0; i < 256; i++)
