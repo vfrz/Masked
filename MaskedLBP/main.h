@@ -7,6 +7,7 @@
 
 enum Masked
 {
+    Unknown = -1,
     Bad = 0,
     Good = 1
 };
@@ -28,6 +29,11 @@ public:
         return _masked;
     }
 
+    ushort getData(int i)
+    {
+        return _data[i];
+    }
+
     ushort *getData()
     {
         return _data;
@@ -37,6 +43,10 @@ public:
 void process(int argc, char *argv[]);
 
 void compare(int argc, char *argv[]);
+
+float getDifference(MaskedModel imageModel, MaskedModel compared, std::string algorithm);
+
+MaskedModel readLBP(std::string imageFile, Masked masked);
 
 std::vector<MaskedModel> parseModelFile(std::string file);
 
