@@ -2,9 +2,6 @@
 
 namespace fs = std::filesystem;
 
-using namespace cv;
-using namespace std;
-
 int main(int argc, char *argv[])
 {
     if (argc < 2)
@@ -29,14 +26,14 @@ int main(int argc, char *argv[])
 
 void processDirectory(std::string inputDirectory, Masked masked, std::string outputFile)
 {
-    ofstream stream;
+    std::ofstream stream;
     stream.open(outputFile, std::ios_base::app);
 
     for (const auto &entry : fs::directory_iterator(inputDirectory))
     {
-        cout << "Processing image: " << entry.path().filename() << endl;
+        std::cout << "Processing image: " << entry.path().filename() << std::endl;
 
-        auto inputImagePath = samples::findFile(entry.path());
+        auto inputImagePath = cv::samples::findFile(entry.path());
 
         auto model = readLBP(inputImagePath, masked);
         auto data = model.getData();
@@ -69,44 +66,34 @@ void process(int argc, char *argv[])
     processDirectory(imfdInputDirectory, Masked::Bad, outputFile);
 }
 
-void compareDirectory(std::string modelFile, std::string inputDirectory, std::string algorithm, std::string outputFile, Masked expectedMasked)
+void compareDirectory(std::string modelFile, std::string inputDirectory, std::string algorithm, std::string outputFile,
+                      Masked expectedMasked)
 {
     auto models = parseModelFile(modelFile);
 
-    std::cout << models[0].getData(0) << std::endl;
-
-    ofstream stream;
+    std::ofstream stream;
     stream.open(outputFile, std::ios_base::app);
 
     for (const auto &entry : fs::directory_iterator(inputDirectory))
     {
-        cout << "Comparing image: " << entry.path().filename() << endl;
+        std::cout << "Comparing image: " << entry.path().filename() << std::endl;
 
         auto imageModel = readLBP(entry.path(), Masked::Unknown);
 
         float minDiff = 8000000;
         Masked currentMasked = Masked::Unknown;
-        std::cout << models[0].getData(0) << std::endl;
 
         for (auto i = 0; i < models.size(); i++)
         {
-            std::cout << models[0].getData(0) << std::endl;
-            return;
-
             float diff = getDifference(imageModel, models[i], algorithm);
-            //std::cout << "MinDiff: " << to_string(minDiff) << " Diff: " << to_string(diff) << std::endl;
             if (diff < minDiff)
             {
-                std::cout << diff << " " << i << std::endl;
                 currentMasked = models[i].getMasked();
                 minDiff = diff;
             }
-            i++;
         }
 
-        return;
-
-        stream << (int) currentMasked << " " << (int) expectedMasked << " " << entry.path().filename() << endl;
+        stream << (int) currentMasked << " " << (int) expectedMasked << " " << entry.path().filename() << std::endl;
     }
 
     stream.close();
@@ -126,31 +113,26 @@ void compare(int argc, char *argv[])
 
 MaskedModel readLBP(std::string imageFile, Masked masked)
 {
-    auto inputImage = imread(imageFile, IMREAD_GRAYSCALE);
+    auto inputImage = imread(imageFile, cv::IMREAD_GRAYSCALE);
 
-    auto positions = new tuple<Point, uchar>[8]{
-            tuple<Point, int>(Point(-1, -1), 1),
-            tuple<Point, int>(Point(0, -1), 2),
-            tuple<Point, int>(Point(1, -1), 4),
-            tuple<Point, int>(Point(-1, 0), 8),
-            tuple<Point, int>(Point(1, 0), 16),
-            tuple<Point, int>(Point(-1, 1), 32),
-            tuple<Point, int>(Point(0, 1), 64),
-            tuple<Point, int>(Point(1, 1), 128)
+    auto positions = new std::tuple<cv::Point, uchar>[8]{
+            std::tuple<cv::Point, int>(cv::Point(-1, -1), 1),
+            std::tuple<cv::Point, int>(cv::Point(0, -1), 2),
+            std::tuple<cv::Point, int>(cv::Point(1, -1), 4),
+            std::tuple<cv::Point, int>(cv::Point(-1, 0), 8),
+            std::tuple<cv::Point, int>(cv::Point(1, 0), 16),
+            std::tuple<cv::Point, int>(cv::Point(-1, 1), 32),
+            std::tuple<cv::Point, int>(cv::Point(0, 1), 64),
+            std::tuple<cv::Point, int>(cv::Point(1, 1), 128)
     };
 
-    auto data = new ushort[256];
-
-    for (auto i = 0; i < 256; i++)
-    {
-        data[i] = 0;
-    }
+    auto data = std::vector<ushort>(256);
 
     for (auto x = 1; x < inputImage.cols - 1; x++)
     {
         for (auto y = 1; y < inputImage.rows - 1; y++)
         {
-            auto middlePixel = inputImage.at<uchar>(Point(x, y));
+            auto middlePixel = inputImage.at<uchar>(cv::Point(x, y));
 
             uchar finalValue = 0;
 
@@ -161,7 +143,7 @@ MaskedModel readLBP(std::string imageFile, Masked masked)
                 auto p = get<0>(pos);
                 auto m = get<1>(pos);
 
-                auto pixel = inputImage.at<uchar>(Point(x, y) + p);
+                auto pixel = inputImage.at<uchar>(cv::Point(x, y) + p);
 
                 finalValue += (pixel >= middlePixel ? 1 : 0) * m;
             }
@@ -175,7 +157,7 @@ MaskedModel readLBP(std::string imageFile, Masked masked)
 
 std::vector<MaskedModel> parseModelFile(std::string modelFile)
 {
-    ifstream stream;
+    std::ifstream stream;
     stream.open(modelFile);
 
     auto result = std::vector<MaskedModel>();
@@ -185,7 +167,7 @@ std::vector<MaskedModel> parseModelFile(std::string modelFile)
         int masked;
         stream >> masked;
 
-        ushort data[256] = {};
+        auto data = std::vector<ushort>(256);
         for (auto i = 0; i < 256; i++)
         {
             ushort temp;
@@ -195,12 +177,7 @@ std::vector<MaskedModel> parseModelFile(std::string modelFile)
 
         MaskedModel model((Masked) masked, data);
 
-        /*std::cout << data[0] << std::endl;
-        std::cout << data[1] << std::endl;*/
-
         result.emplace_back(model);
-
-        break;
     }
 
     return result;
@@ -238,10 +215,10 @@ void displayColorigram(ushort colorigram[])
 
     for (auto i = 0; i < 256; i++)
     {
-        cout << "Value at " << i << " is " << to_string(colorigram[i]) << endl;
+        std::cout << "Value at " << i << " is " << std::to_string(colorigram[i]) << std::endl;
 
         total += colorigram[i];
     }
 
-    cout << "Total: " << total << endl;
+    std::cout << "Total: " << total << std::endl;
 }

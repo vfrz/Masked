@@ -17,9 +17,9 @@ class MaskedModel
 {
 private:
     Masked _masked;
-    ushort *_data;
+    std::vector<ushort> _data;
 public:
-    MaskedModel(Masked masked, ushort *data)
+    MaskedModel(Masked masked, std::vector<ushort> data)
     {
         _masked = masked;
         _data = data;
@@ -35,7 +35,7 @@ public:
         return _data[i];
     }
 
-    ushort *getData()
+    std::vector<ushort> &getData()
     {
         return _data;
     }
