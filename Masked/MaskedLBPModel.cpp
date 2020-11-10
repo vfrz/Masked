@@ -52,8 +52,8 @@ std::vector<ushort> MaskedLBPModel::getLBP(cv::Mat &image)
             {
                 auto pos = offsetsMultipliers[i];
 
-                cv::Point offsetPoint = get<0>(pos);
-                uchar multiplier = get<1>(pos);
+                cv::Point offsetPoint = std::get<0>(pos);
+                uchar multiplier = std::get<1>(pos);
 
                 uchar pixel = image.at<uchar>(cv::Point(x, y) + offsetPoint);
 
