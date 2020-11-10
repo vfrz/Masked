@@ -26,7 +26,7 @@ int Predictor::Predict()
 
     std::vector<PredictionResult> results;
 
-    // SAD
+    //SAD
     auto test1CMFDSADLambda = [&]()
     {
         results.emplace_back(Predict(test1CMFDPath, train1Models, ComparisonAlgorithm::SAD, MaskedType::Good));
@@ -37,6 +37,30 @@ int Predictor::Predict()
     };
     lambdas.emplace_back(test1CMFDSADLambda);
     lambdas.emplace_back(test1IMFDSADLambda);
+
+    //Correlation
+    auto test1CMFDCorrelationLambda = [&]()
+    {
+        results.emplace_back(Predict(test1CMFDPath, train1Models, ComparisonAlgorithm::Correlation, MaskedType::Good));
+    };
+    auto test1IMFDCorrelationLambda = [&]()
+    {
+        results.emplace_back(Predict(test1IMFDPath, train1Models, ComparisonAlgorithm::Correlation, MaskedType::Bad));
+    };
+    lambdas.emplace_back(test1CMFDCorrelationLambda);
+    lambdas.emplace_back(test1IMFDCorrelationLambda);
+
+    //ChiSquare
+    auto test1CMFDChiSquareLambda = [&]()
+    {
+        results.emplace_back(Predict(test1CMFDPath, train1Models, ComparisonAlgorithm::ChiSquare, MaskedType::Good));
+    };
+    auto test1IMFDChiSquareLambda = [&]()
+    {
+        results.emplace_back(Predict(test1IMFDPath, train1Models, ComparisonAlgorithm::ChiSquare, MaskedType::Bad));
+    };
+    lambdas.emplace_back(test1CMFDChiSquareLambda);
+    lambdas.emplace_back(test1IMFDChiSquareLambda);
 
     //Intersection
     auto test1CMFDIntersectionLambda = [&]()
@@ -49,6 +73,19 @@ int Predictor::Predict()
     };
     lambdas.emplace_back(test1CMFDIntersectionLambda);
     lambdas.emplace_back(test1IMFDIntersectionLambda);
+
+    //Bhattacharyya
+    auto test1CMFDBhattacharyyaLambda = [&]()
+    {
+        results.emplace_back(
+                Predict(test1CMFDPath, train1Models, ComparisonAlgorithm::Bhattacharyya, MaskedType::Good));
+    };
+    auto test1IMFDBhattacharyyaLambda = [&]()
+    {
+        results.emplace_back(Predict(test1IMFDPath, train1Models, ComparisonAlgorithm::Bhattacharyya, MaskedType::Bad));
+    };
+    lambdas.emplace_back(test1CMFDBhattacharyyaLambda);
+    lambdas.emplace_back(test1IMFDBhattacharyyaLambda);
 
     std::for_each(std::execution::par, lambdas.begin(), lambdas.end(), [&](std::function<void()> &lambda)
     {
@@ -68,6 +105,8 @@ Predictor::Predict(fs::path &testPath, std::vector<MaskedLBPModel> &trainModels,
                    MaskedType expectedType)
 {
     int good = 0, bad = 0;
+
+    std::cout << ComparisonAlgorithmHelper::toString(algorithm) << std::endl;
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -109,17 +148,21 @@ Predictor::Predict(fs::path &testPath, std::vector<MaskedLBPModel> &trainModels,
 
 double Predictor::getDifference(MaskedLBPModel &model1, MaskedLBPModel &model2, ComparisonAlgorithm algorithm)
 {
-    if (algorithm == ComparisonAlgorithm::SAD)
+    switch (algorithm)
     {
-        return getSAD(model1, model2);
+        case SAD:
+            return getSAD(model1, model2);
+        case Correlation:
+            return getCorrelation(model1, model2);
+        case ChiSquare:
+            return getChiSquare(model1, model2);
+        case Intersection:
+            return getIntersect(model1, model2);
+        case Bhattacharyya:
+            return getBhattacharyya(model1, model2);
+        default:
+            throw std::exception();
     }
-
-    if (algorithm == ComparisonAlgorithm::Intersection)
-    {
-        return getIntersect(model1, model2);
-    }
-
-    throw std::exception();
 }
 
 double Predictor::getSAD(MaskedLBPModel &model1, MaskedLBPModel &model2)
@@ -154,3 +197,68 @@ double Predictor::getIntersect(MaskedLBPModel &model1, MaskedLBPModel &model2)
 
     return total;
 }
+
+double Predictor::getChiSquare(MaskedLBPModel &model1, MaskedLBPModel &model2)
+{
+    double total = 0;
+
+    auto model1Data = model1.getData();
+    auto model2Data = model2.getData();
+
+    for (auto i = 0; i < 256; i++)
+    {
+        if (model2Data[i] != 0)
+        {
+            total += (model1Data[i] - model2Data[i]) * (model1Data[i] - model2Data[i]) / (double) model2Data[i];
+        }
+    }
+
+    return total;
+}
+
+double Predictor::getBhattacharyya(MaskedLBPModel &model1, MaskedLBPModel &model2)
+{
+    double mean_v1 = 0, mean_v2 = 0, coefBhattacharyaSum = 0;
+
+    auto model1Data = model1.getData();
+    auto model2Data = model2.getData();
+
+    for (auto i = 0; i < 256; i++)
+    {
+        mean_v1 += model1Data[i];
+        mean_v2 += model2Data[i];
+        coefBhattacharyaSum += sqrt(model1Data[i] * model2Data[i]);
+    }
+
+    mean_v1 = mean_v1 / 256.0f;
+    mean_v2 = mean_v2 / 256.0f;
+
+    return sqrt(1.0f - (1.0f / sqrt(mean_v1 * mean_v2 * 256 * 256)) * coefBhattacharyaSum);
+}
+
+double Predictor::getCorrelation(MaskedLBPModel &model1, MaskedLBPModel &model2)
+{
+    double mean_v1 = 0, mean_v2 = 0, dividend = 0, diviseur1 = 0, diviseur2 = 0;
+
+    auto model1Data = model1.getData();
+    auto model2Data = model2.getData();
+
+    for (auto i = 0; i < 256; i++)
+    {
+        mean_v1 += model1Data[i];
+        mean_v2 += model2Data[i];
+    }
+
+    mean_v1 = mean_v1 / 256.0f;
+    mean_v2 = mean_v2 / 256.0f;
+
+    for (auto i = 0; i < 256; i++)
+    {
+        dividend += (model1Data[i] - mean_v1) * (model2Data[i] - mean_v2);
+        diviseur1 += (model1Data[i] - mean_v1) * (model1Data[i] - mean_v1);
+        diviseur2 += (model2Data[i] - mean_v2) * (model2Data[i] - mean_v2);
+    }
+
+    return dividend / sqrt(diviseur1 * diviseur2);
+}
+

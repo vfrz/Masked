@@ -30,4 +30,10 @@ private:
     static double getSAD(MaskedLBPModel &model1, MaskedLBPModel &model2);
 
     static double getIntersect(MaskedLBPModel &model1, MaskedLBPModel &model2);
+
+    static double getChiSquare(MaskedLBPModel &model1, MaskedLBPModel &model2);
+
+    static double getBhattacharyya(MaskedLBPModel &model1, MaskedLBPModel &model2);
+
+    static double getCorrelation(MaskedLBPModel &model1, MaskedLBPModel &model2);
 };
