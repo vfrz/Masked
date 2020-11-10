@@ -21,7 +21,7 @@
 | Intersection | Good | 58.86% |
 | Intersection | Bad | 27.26% |
 | Correlation | Good | 14.76% |
-| Correlation | Good | 77.34% |
+| Correlation | Bad | 77.34% |
 
 ### Raw logs
 ```
