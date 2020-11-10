@@ -41,7 +41,7 @@ void Trainer::Train(fs::path &trainPath, MaskedType maskedType, fs::path &output
 
         for (auto i = 0; i < 256; i++)
         {
-            stream << "," << model.getData(i);
+            stream  << "," << model.getData(i);
         }
 
         stream << std::endl;

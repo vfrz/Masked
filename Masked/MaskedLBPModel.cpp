@@ -86,13 +86,20 @@ std::vector<MaskedLBPModel> MaskedLBPModel::loadFromFile(fs::path &filePath)
         std::string dataString;
 
         getline(inputFileStream, typeString, ',');
+        if (typeString.empty())
+        {
+            break;
+        }
         maskedType = (MaskedType) std::stoi(typeString);
 
-        for (int i = 0; i < 256; i++)
+        for (int i = 0; i < 255; i++)
         {
             getline(inputFileStream, dataString, ',');
             data[i] = (ushort) std::stoi(dataString);
         }
+
+        getline(inputFileStream, dataString);
+        data[255] = (ushort) std::stoi(dataString);
 
         result.emplace_back(MaskedLBPModel(maskedType, data));
     }
