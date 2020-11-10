@@ -1,7 +1,3 @@
-//
-// Created by vfrz on 11/10/20.
-//
-
 #include "MaskedLBPModel.h"
 
 MaskedLBPModel::MaskedLBPModel(MaskedType maskedType, std::vector<ushort> &data)
@@ -15,9 +11,9 @@ MaskedType MaskedLBPModel::getMaskedType()
     return _maskedType;
 }
 
-ushort MaskedLBPModel::getData(int i)
+std::vector<ushort> &MaskedLBPModel::getData()
 {
-    return _data[i];
+    return _data;
 }
 
 MaskedLBPModel MaskedLBPModel::computeFromImageFile(fs::path &filePath, MaskedType maskedType)

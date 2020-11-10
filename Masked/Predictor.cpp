@@ -7,33 +7,65 @@ Predictor::Predictor(fs::path &datasetPath)
 
 int Predictor::Predict()
 {
+    std::cout << "===== Starting prediction =====" << std::endl;
+
     auto test1Path = fs::path(_datasetPath).append("GRAY/1TEST/");
     auto train1Path = fs::path(_datasetPath).append("GRAY/1TRAIN/train.lbp");
     auto test1CMFDPath = fs::path(test1Path).append("CMFD/");
     auto test1IMFDPath = fs::path(test1Path).append("IMFD/");
 
-    auto train1Models = MaskedLBPModel::loadFromFile(train1Path);
-
-    auto output1File = fs::path(test1Path).append("results.txt");
-
-    if (fs::exists(output1File))
+    if (!fs::exists(train1Path))
     {
-        fs::remove(output1File);
+        std::cout << "Couldn't find train file, you need to execute train before predict." << std::endl;
+        return 1;
     }
 
-    auto test1CMFDSADPredictionResult = Predict(test1CMFDPath, train1Models, ComparisonAlgorithm::SAD, MaskedType::Good,
-                                                output1File);
+    auto train1Models = MaskedLBPModel::loadFromFile(train1Path);
 
-    std::cout << test1CMFDSADPredictionResult.getGood() << std::endl;
-    std::cout << test1CMFDSADPredictionResult.getBad() << std::endl;
-    std::cout << test1CMFDSADPredictionResult.getTotal() << std::endl;
+    std::vector<std::function<void()>> lambdas;
+
+    std::vector<PredictionResult> results;
+
+    // SAD
+    auto test1CMFDSADLambda = [&]()
+    {
+        results.emplace_back(Predict(test1CMFDPath, train1Models, ComparisonAlgorithm::SAD, MaskedType::Good));
+    };
+    auto test1IMFDSADLambda = [&]()
+    {
+        results.emplace_back(Predict(test1IMFDPath, train1Models, ComparisonAlgorithm::SAD, MaskedType::Bad));
+    };
+    lambdas.emplace_back(test1CMFDSADLambda);
+    lambdas.emplace_back(test1IMFDSADLambda);
+
+    //Intersection
+    auto test1CMFDIntersectionLambda = [&]()
+    {
+        results.emplace_back(Predict(test1CMFDPath, train1Models, ComparisonAlgorithm::Intersection, MaskedType::Good));
+    };
+    auto test1IMFDIntersectionLambda = [&]()
+    {
+        results.emplace_back(Predict(test1IMFDPath, train1Models, ComparisonAlgorithm::Intersection, MaskedType::Bad));
+    };
+    lambdas.emplace_back(test1CMFDIntersectionLambda);
+    lambdas.emplace_back(test1IMFDIntersectionLambda);
+
+    std::for_each(std::execution::par, lambdas.begin(), lambdas.end(), [&](std::function<void()> &lambda)
+    {
+        lambda();
+    });
+
+    for (auto &result : results)
+    {
+        result.print();
+    }
 
     return 0;
 }
 
 PredictionResult
 Predictor::Predict(fs::path &testPath, std::vector<MaskedLBPModel> &trainModels, ComparisonAlgorithm algorithm,
-                   MaskedType expectedType, fs::path &outputFilePath)
+                   MaskedType expectedType)
 {
     int good = 0, bad = 0;
 
@@ -41,7 +73,7 @@ Predictor::Predict(fs::path &testPath, std::vector<MaskedLBPModel> &trainModels,
 
     for (const auto &entry : fs::directory_iterator(testPath))
     {
-        std::cout << "[PREDICT] Processing image: " << entry.path().filename() << std::endl;
+        std::cout << "[PREDICTION] Processing image: " << entry.path().filename() << std::endl;
 
         auto imagePath = entry.path();
         auto imageModel = MaskedLBPModel::computeFromImageFile(imagePath, MaskedType::Unknown);
@@ -72,7 +104,7 @@ Predictor::Predict(fs::path &testPath, std::vector<MaskedLBPModel> &trainModels,
 
     std::chrono::duration<double> elapsed = end - start;
 
-    return PredictionResult(good, bad, elapsed.count());
+    return PredictionResult(algorithm, good, bad, elapsed.count(), expectedType);
 }
 
 double Predictor::getDifference(MaskedLBPModel &model1, MaskedLBPModel &model2, ComparisonAlgorithm algorithm)
@@ -94,9 +126,12 @@ double Predictor::getSAD(MaskedLBPModel &model1, MaskedLBPModel &model2)
 {
     double total = 0;
 
+    auto model1Data = model1.getData();
+    auto model2Data = model2.getData();
+
     for (auto i = 0; i < 256; i++)
     {
-        total += std::abs(model1.getData(i) - model2.getData(i));
+        total += std::abs(model1Data[i] - model2Data[i]);
     }
 
     return total;
@@ -106,11 +141,14 @@ double Predictor::getIntersect(MaskedLBPModel &model1, MaskedLBPModel &model2)
 {
     double total = 0;
 
+    auto model1Data = model1.getData();
+    auto model2Data = model2.getData();
+
     for (auto i = 0; i < 256; i++)
     {
-        if (model1.getData(i) != model2.getData(i))
+        if (model1Data[i] != model2Data[i])
         {
-            total += std::min(model1.getData(i), model2.getData(i));
+            total += std::min(model1Data[i], model2Data[i]);
         }
     }
 

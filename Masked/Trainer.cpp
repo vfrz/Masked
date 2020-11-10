@@ -37,11 +37,13 @@ void Trainer::Train(fs::path &trainPath, MaskedType maskedType, fs::path &output
 
         auto model = MaskedLBPModel::computeFromImageFile(inputImagePath, maskedType);
 
+        auto modelData = model.getData();
+
         stream << maskedType;
 
         for (auto i = 0; i < 256; i++)
         {
-            stream  << "," << model.getData(i);
+            stream  << "," << modelData[i];
         }
 
         stream << std::endl;

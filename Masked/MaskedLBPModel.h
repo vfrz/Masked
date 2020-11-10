@@ -19,7 +19,7 @@ public:
 
     MaskedType getMaskedType();
 
-    ushort getData(int i);
+    std::vector<ushort> &getData();
 
     static std::vector<ushort> getLBP(cv::Mat &image);
 
