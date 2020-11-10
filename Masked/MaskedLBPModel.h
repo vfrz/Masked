@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <filesystem>
 #include <opencv2/opencv.hpp>
@@ -22,5 +23,7 @@ public:
 
     static std::vector<ushort> getLBP(cv::Mat &image);
 
-    static MaskedLBPModel loadFromFile(fs::path &filePath, MaskedType maskedType);
+    static MaskedLBPModel computeFromImageFile(fs::path &filePath, MaskedType maskedType);
+
+    static std::vector<MaskedLBPModel> loadFromFile(fs::path &filePath);
 };

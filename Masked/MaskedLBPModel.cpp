@@ -20,7 +20,7 @@ ushort MaskedLBPModel::getData(int i)
     return _data[i];
 }
 
-MaskedLBPModel MaskedLBPModel::loadFromFile(fs::path &filePath, MaskedType maskedType)
+MaskedLBPModel MaskedLBPModel::computeFromImageFile(fs::path &filePath, MaskedType maskedType)
 {
     cv::Mat inputImage = cv::imread(filePath, cv::IMREAD_GRAYSCALE);
 
@@ -69,4 +69,33 @@ std::vector<ushort> MaskedLBPModel::getLBP(cv::Mat &image)
     }
 
     return data;
+}
+
+std::vector<MaskedLBPModel> MaskedLBPModel::loadFromFile(fs::path &filePath)
+{
+    std::vector<MaskedLBPModel> result;
+
+    std::ifstream inputFileStream;
+    inputFileStream.open(filePath);
+
+    while (inputFileStream.good())
+    {
+        MaskedType maskedType;
+        std::vector<ushort> data(256);
+        std::string typeString;
+        std::string dataString;
+
+        getline(inputFileStream, typeString, ',');
+        maskedType = (MaskedType) std::stoi(typeString);
+
+        for (int i = 0; i < 256; i++)
+        {
+            getline(inputFileStream, dataString, ',');
+            data[i] = (ushort) std::stoi(dataString);
+        }
+
+        result.emplace_back(MaskedLBPModel(maskedType, data));
+    }
+
+    return result;
 }
