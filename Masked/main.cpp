@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
     }
 
     std::string command = argv[1];
-    fs::path datasetPath = fs::current_path().append(argv[2]);
+    fs::path datasetPath = fs::path(fs::current_path()).append(argv[2]);
 
     if (command == "train")
     {

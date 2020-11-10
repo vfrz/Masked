@@ -97,5 +97,7 @@ std::vector<MaskedLBPModel> MaskedLBPModel::loadFromFile(fs::path &filePath)
         result.emplace_back(MaskedLBPModel(maskedType, data));
     }
 
+    inputFileStream.close();
+
     return result;
 }

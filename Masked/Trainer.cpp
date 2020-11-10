@@ -7,17 +7,45 @@ Trainer::Trainer(fs::path &datasetPath)
 
 int Trainer::Train()
 {
-    /*auto path = fs::path("/home/vfrz/Documents/Projects/Masked/dataset/GRAY/1TRAIN/CMFD/00001_Mask.jpg");
+    auto train1Path = fs::path(_datasetPath).append("GRAY/1TRAIN/");
+    auto train1CMFDPath = fs::path(train1Path).append("CMFD/");
+    auto train1IMFDPath = fs::path(train1Path).append("IMFD/");
 
-    auto model = MaskedLBPModel::computeFromImageFile(path, MaskedType::Good);
+    auto outputFile = fs::path(train1Path).append("train.lbp");
 
-    std::cout << model.getData(1) << std::endl;*/
+    if (fs::exists(outputFile))
+    {
+        fs::remove(outputFile);
+    }
 
-    auto path = fs::path("/home/vfrz/Documents/Projects/Masked/test.lbp");
-
-    auto models = MaskedLBPModel::loadFromFile(path);
-
-    std::cout << models[0].getData(255) << std::endl;
+    Train(train1CMFDPath, MaskedType::Good, outputFile);
+    Train(train1IMFDPath, MaskedType::Bad, outputFile);
 
     return 0;
+}
+
+void Trainer::Train(fs::path &trainPath, MaskedType maskedType, fs::path &outputFilePath)
+{
+    std::ofstream stream;
+    stream.open(outputFilePath, std::ios_base::app);
+
+    for (const auto &entry : fs::directory_iterator(trainPath))
+    {
+        std::cout << "[TRAINING] Processing image: " << entry.path().filename() << std::endl;
+
+        auto inputImagePath = entry.path();
+
+        auto model = MaskedLBPModel::computeFromImageFile(inputImagePath, maskedType);
+
+        stream << maskedType;
+
+        for (auto i = 0; i < 256; i++)
+        {
+            stream << "," << model.getData(i);
+        }
+
+        stream << std::endl;
+    }
+
+    stream.close();
 }

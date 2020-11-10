@@ -16,4 +16,5 @@ public:
 
 private:
     fs::path _datasetPath;
+    static void Train(fs::path &trainPath, MaskedType maskedType, fs::path &outputFilePath);
 };
