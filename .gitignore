@@ -3,6 +3,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=clion+all,jetbrains+all,c++,cmake
 
 dataset/
+output/
 
 ### C++ ###
 # Prerequisites
