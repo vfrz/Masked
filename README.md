@@ -1,29 +1,68 @@
 # Masked
 
-## Compilation
+## What?
 
-...
+**Masked** is a school project about [LBP](https://en.wikipedia.org/wiki/Local_binary_patterns) and mask detection.
+The goal is to detect if a person wear a mask correctly from a picture of his face.
+
+## How?
+
+### Dataset
+Link: https://mega.nz/folder/94BT0Qha#FojzXdjOcKSX-WxnuNr91g
+
+Download the `dataset.zip` file and extract the `dataset` folder wherever you want, the root of the git directory is a good choice.
+
+### Compilation
+
+**Requirements:**
+- CMake (>= 3.0)
+- gcc (C++ >= 17)
+- OpenCV
+- tbb
+
+**Steps:**
+1. `cd Masked`
+2. `cmake ./CMakeLists.txt -B ./output/`
+3. `cd output/`
+4. `make`
+
+`Masked` executable file is in the `output` folder.
 
 ## Usage
 
-...
+**Train:**
 
-## Current results (may be wrong)
+``Masked train "path_to_dataset_directory"``
+
+**Predict:**
+
+``Masked predict "path_to_dataset_directory"``
+
+The prediction process is running on parallel on every core of your CPU, be careful about temperature!
+
+## Current results
 
 | Algorithm | MaskedType | Ratio |
 |-----------|------------|-------|
 | SAD | Good | 66.84% |
 | SAD | Bad | 61.14% |
+| **SAD** | **Mean** | **63.99%** |
 | ChiSquare | Good | 62.26% |
 | ChiSquare | Bad | 64.82% |
+| **ChiSquare** | **Mean** | **63.54%** |
 | Bhattacharyya | Good | 67.22% |
 | Bhattacharyya | Bad | 62.76% |
+| **Bhattacharyya** | **Mean** | **64.99%** |
 | Intersection | Good | 58.86% |
 | Intersection | Bad | 27.26% |
+| **Intersection** | **Mean** | **43.06%** |
 | Correlation | Good | 14.76% |
 | Correlation | Bad | 77.34% |
+| **Correlation** | **Mean** | **46.05%** |
 
 ### Raw logs
+*Running on i7 9700k 8 Core, tests are running in parallel so total predict time is equal to the maximum elapsed time (218.078s ~= 3min38)*
+
 ```
 ===== Test results =====
 Algorithm: SAD
