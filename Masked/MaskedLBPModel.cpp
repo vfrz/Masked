@@ -31,11 +31,11 @@ std::vector<ushort> MaskedLBPModel::getLBP(cv::Mat &image)
             std::tuple<cv::Point, int>(cv::Point(-1, -1), 1),
             std::tuple<cv::Point, int>(cv::Point(0, -1), 2),
             std::tuple<cv::Point, int>(cv::Point(1, -1), 4),
-            std::tuple<cv::Point, int>(cv::Point(-1, 0), 8),
-            std::tuple<cv::Point, int>(cv::Point(1, 0), 16),
-            std::tuple<cv::Point, int>(cv::Point(-1, 1), 32),
-            std::tuple<cv::Point, int>(cv::Point(0, 1), 64),
-            std::tuple<cv::Point, int>(cv::Point(1, 1), 128)
+            std::tuple<cv::Point, int>(cv::Point(1, 0), 8),
+            std::tuple<cv::Point, int>(cv::Point(1, 1), 16),
+            std::tuple<cv::Point, int>(cv::Point(0, 1), 32),
+            std::tuple<cv::Point, int>(cv::Point(-1, 1), 64),
+            std::tuple<cv::Point, int>(cv::Point(-1, 0), 128)
     };
 
     std::vector<ushort> data(256);
