@@ -10,11 +10,12 @@ namespace fs = std::filesystem;
 class Trainer
 {
 public:
-    explicit Trainer(fs::path &datasetPath);
+    explicit Trainer(fs::path &datasetPath, bool pyramid = false);
 
     int Train();
 
 private:
     fs::path _datasetPath;
-    static void Train(fs::path &trainPath, MaskedType maskedType, fs::path &outputFilePath);
+    bool _pyramid;
+    void Train(fs::path &trainPath, MaskedType maskedType, fs::path &outputFilePath);
 };

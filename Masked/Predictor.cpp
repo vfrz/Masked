@@ -1,8 +1,9 @@
 #include "Predictor.h"
 
-Predictor::Predictor(fs::path &datasetPath)
+Predictor::Predictor(fs::path &datasetPath, bool pyramid)
 {
     _datasetPath = datasetPath;
+    _pyramid = pyramid;
 }
 
 int Predictor::Predict()
@@ -106,8 +107,6 @@ Predictor::Predict(fs::path &testPath, std::vector<MaskedLBPModel> &trainModels,
 {
     int good = 0, bad = 0;
 
-    std::cout << ComparisonAlgorithmHelper::toString(algorithm) << std::endl;
-
     auto start = std::chrono::high_resolution_clock::now();
 
     for (const auto &entry : fs::directory_iterator(testPath))
@@ -115,7 +114,8 @@ Predictor::Predict(fs::path &testPath, std::vector<MaskedLBPModel> &trainModels,
         std::cout << "[PREDICTION] Processing image: " << entry.path().filename() << std::endl;
 
         auto imagePath = entry.path();
-        auto imageModel = MaskedLBPModel::computeFromImageFile(imagePath, MaskedType::Unknown);
+        auto image = cv::imread(imagePath, cv::IMREAD_GRAYSCALE);
+        auto imageModel = MaskedLBPModel::computeFromImage(image, MaskedType::Unknown, _pyramid);
 
         double minDiff = std::numeric_limits<double>::max();
         MaskedType currentMaskedType = MaskedType::Unknown;
@@ -172,7 +172,7 @@ double Predictor::getSAD(MaskedLBPModel &model1, MaskedLBPModel &model2)
     auto model1Data = model1.getData();
     auto model2Data = model2.getData();
 
-    for (auto i = 0; i < 256; i++)
+    for (auto i = 0; i < model1Data.size(); i++)
     {
         total += std::abs(model1Data[i] - model2Data[i]);
     }
@@ -187,7 +187,7 @@ double Predictor::getIntersect(MaskedLBPModel &model1, MaskedLBPModel &model2)
     auto model1Data = model1.getData();
     auto model2Data = model2.getData();
 
-    for (auto i = 0; i < 256; i++)
+    for (auto i = 0; i < model1Data.size(); i++)
     {
         if (model1Data[i] != model2Data[i])
         {
@@ -205,7 +205,7 @@ double Predictor::getChiSquare(MaskedLBPModel &model1, MaskedLBPModel &model2)
     auto model1Data = model1.getData();
     auto model2Data = model2.getData();
 
-    for (auto i = 0; i < 256; i++)
+    for (auto i = 0; i < model1Data.size(); i++)
     {
         if (model2Data[i] != 0)
         {
@@ -223,17 +223,17 @@ double Predictor::getBhattacharyya(MaskedLBPModel &model1, MaskedLBPModel &model
     auto model1Data = model1.getData();
     auto model2Data = model2.getData();
 
-    for (auto i = 0; i < 256; i++)
+    for (auto i = 0; i < model1Data.size(); i++)
     {
         mean_v1 += model1Data[i];
         mean_v2 += model2Data[i];
         coefBhattacharyaSum += sqrt(model1Data[i] * model2Data[i]);
     }
 
-    mean_v1 = mean_v1 / 256.0f;
-    mean_v2 = mean_v2 / 256.0f;
+    mean_v1 = mean_v1 / (float) model1Data.size();
+    mean_v2 = mean_v2 / (float) model1Data.size();
 
-    return sqrt(1.0f - (1.0f / sqrt(mean_v1 * mean_v2 * 256 * 256)) * coefBhattacharyaSum);
+    return sqrt(1.0f - (1.0f / sqrt(mean_v1 * mean_v2 * model1Data.size() * model1Data.size())) * coefBhattacharyaSum);
 }
 
 double Predictor::getCorrelation(MaskedLBPModel &model1, MaskedLBPModel &model2)
@@ -243,16 +243,16 @@ double Predictor::getCorrelation(MaskedLBPModel &model1, MaskedLBPModel &model2)
     auto model1Data = model1.getData();
     auto model2Data = model2.getData();
 
-    for (auto i = 0; i < 256; i++)
+    for (auto i = 0; i < model1Data.size(); i++)
     {
         mean_v1 += model1Data[i];
         mean_v2 += model2Data[i];
     }
 
-    mean_v1 = mean_v1 / 256.0f;
-    mean_v2 = mean_v2 / 256.0f;
+    mean_v1 = mean_v1 / (float) model1Data.size();
+    mean_v2 = mean_v2 / (float) model1Data.size();
 
-    for (auto i = 0; i < 256; i++)
+    for (auto i = 0; i < model1Data.size(); i++)
     {
         dividend += (model1Data[i] - mean_v1) * (model2Data[i] - mean_v2);
         diviseur1 += (model1Data[i] - mean_v1) * (model1Data[i] - mean_v1);

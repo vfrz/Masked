@@ -1,6 +1,6 @@
 #include "MaskedLBPModel.h"
 
-MaskedLBPModel::MaskedLBPModel(MaskedType maskedType, std::vector<ushort> &data)
+MaskedLBPModel::MaskedLBPModel(MaskedType maskedType, std::vector<int>& data)
 {
     _maskedType = maskedType;
     _data = data;
@@ -11,21 +11,48 @@ MaskedType MaskedLBPModel::getMaskedType()
     return _maskedType;
 }
 
-std::vector<ushort> &MaskedLBPModel::getData()
+std::vector<int>& MaskedLBPModel::getData()
 {
     return _data;
 }
 
-MaskedLBPModel MaskedLBPModel::computeFromImageFile(fs::path &filePath, MaskedType maskedType)
+void MaskedLBPModel::appendData(std::vector<int>& data)
 {
-    cv::Mat inputImage = cv::imread(filePath, cv::IMREAD_GRAYSCALE);
+    for (int i = 0; i < _data.size(); ++i)
+    {
+        _data[i] += data[i];
+    }
+}
 
-    std::vector<ushort> data = getLBP(inputImage);
+MaskedLBPModel MaskedLBPModel::computeFromImage(cv::Mat image, MaskedType maskedType, bool pyramid)
+{
+    std::vector<int> data = getLBP(image);
+
+    if (pyramid) {
+        for (int i = 2; i <= 3; i++)
+        {
+            auto width = image.cols / i;
+            auto height = image.rows / i;
+
+            for (int x = 0; x < i; x++)
+            {
+                for (int y = 0; y < i; y++)
+                {
+                    cv::Mat sub = cv::Mat(image, cv::Rect(x * width, y * height, width, height));
+
+                    auto subLBP = getLBP(sub);
+
+                    for (int j = 0; j < subLBP.size(); ++j)
+                        data.emplace_back(subLBP[j]);
+                }
+            }
+        }
+    }
 
     return MaskedLBPModel(maskedType, data);
 }
 
-std::vector<ushort> MaskedLBPModel::getLBP(cv::Mat &image)
+std::vector<int> MaskedLBPModel::getLBP(cv::Mat& image)
 {
     auto offsetsMultipliers = new std::tuple<cv::Point, uchar>[8]{
             std::tuple<cv::Point, int>(cv::Point(-1, -1), 1),
@@ -38,7 +65,7 @@ std::vector<ushort> MaskedLBPModel::getLBP(cv::Mat &image)
             std::tuple<cv::Point, int>(cv::Point(-1, 0), 128)
     };
 
-    std::vector<ushort> data(256);
+    std::vector<int> data(256);
 
     for (int x = 1; x < image.cols - 1; x++)
     {
@@ -67,7 +94,7 @@ std::vector<ushort> MaskedLBPModel::getLBP(cv::Mat &image)
     return data;
 }
 
-std::vector<MaskedLBPModel> MaskedLBPModel::loadFromFile(fs::path &filePath)
+std::vector<MaskedLBPModel> MaskedLBPModel::loadFromFile(fs::path& filePath, bool pyramid)
 {
     std::vector<MaskedLBPModel> result;
 
@@ -77,7 +104,7 @@ std::vector<MaskedLBPModel> MaskedLBPModel::loadFromFile(fs::path &filePath)
     while (inputFileStream.good())
     {
         MaskedType maskedType;
-        std::vector<ushort> data(256);
+        std::vector<int> data(pyramid ? 256 * 14 : 256);
         std::string typeString;
         std::string dataString;
 
@@ -86,16 +113,16 @@ std::vector<MaskedLBPModel> MaskedLBPModel::loadFromFile(fs::path &filePath)
         {
             break;
         }
-        maskedType = (MaskedType) std::stoi(typeString);
+        maskedType = (MaskedType)std::stoi(typeString);
 
-        for (int i = 0; i < 255; i++)
+        for (int i = 0; i < data.size() - 1; i++)
         {
             getline(inputFileStream, dataString, ',');
-            data[i] = (ushort) std::stoi(dataString);
+            data[i] = (ushort)std::stoi(dataString);
         }
 
         getline(inputFileStream, dataString);
-        data[255] = (ushort) std::stoi(dataString);
+        data[data.size() - 1] = (ushort)std::stoi(dataString);
 
         result.emplace_back(MaskedLBPModel(maskedType, data));
     }

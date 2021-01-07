@@ -13,17 +13,19 @@ class MaskedLBPModel
 {
 private:
     MaskedType _maskedType;
-    std::vector<ushort> _data;
+    std::vector<int> _data;
 public:
-    MaskedLBPModel(MaskedType maskedType, std::vector<ushort> &data);
+    MaskedLBPModel(MaskedType maskedType, std::vector<int>& data);
 
     MaskedType getMaskedType();
 
-    std::vector<ushort> &getData();
+    std::vector<int>& getData();
 
-    static std::vector<ushort> getLBP(cv::Mat &image);
+    void appendData(std::vector<int>& data);
 
-    static MaskedLBPModel computeFromImageFile(fs::path &filePath, MaskedType maskedType);
+    static std::vector<int> getLBP(cv::Mat& image);
 
-    static std::vector<MaskedLBPModel> loadFromFile(fs::path &filePath);
+    static MaskedLBPModel computeFromImage(cv::Mat image, MaskedType maskedType, bool pyramid = false);
+
+    static std::vector<MaskedLBPModel> loadFromFile(fs::path& filePath, bool pyramid = false);
 };

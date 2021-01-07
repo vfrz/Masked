@@ -1,8 +1,9 @@
 #include "Trainer.h"
 
-Trainer::Trainer(fs::path &datasetPath)
+Trainer::Trainer(fs::path &datasetPath, bool pyramid)
 {
     _datasetPath = datasetPath;
+    _pyramid = pyramid;
 }
 
 int Trainer::Train()
@@ -35,13 +36,15 @@ void Trainer::Train(fs::path &trainPath, MaskedType maskedType, fs::path &output
 
         auto inputImagePath = entry.path();
 
-        auto model = MaskedLBPModel::computeFromImageFile(inputImagePath, maskedType);
+        cv::Mat image = cv::imread(inputImagePath, cv::IMREAD_GRAYSCALE);
+
+        MaskedLBPModel model = MaskedLBPModel::computeFromImage(image, maskedType, _pyramid);
 
         auto modelData = model.getData();
 
         stream << maskedType;
 
-        for (auto i = 0; i < 256; i++)
+        for (auto i = 0; i < modelData.size(); i++)
         {
             stream  << "," << modelData[i];
         }

@@ -15,12 +15,13 @@ namespace fs = std::filesystem;
 class Predictor
 {
 public:
-    explicit Predictor(fs::path &datasetPath);
+    explicit Predictor(fs::path &datasetPath, bool pyramid = false);
 
     int Predict();
 
 private:
     fs::path _datasetPath;
+    bool _pyramid;
 
     PredictionResult Predict(fs::path &testPath, std::vector<MaskedLBPModel> &trainModels, ComparisonAlgorithm algorithm,
                              MaskedType expectedType);
